@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simplified DES Tool (S-DES)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      line-height: 1.5;
+    }
+    h1 {
+      text-align: center;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 6px;
+      margin: 4px 0 12px 0;
+      box-sizing: border-box;
+      font-family: monospace;
+    }
+    button {
+      padding: 8px 16px;
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    .section {
+      border: 1px solid #ccc;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 6px;
+    }
+    .output {
+      background: #f5f5f5;
+      padding: 8px;
+      min-height: 40px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    small {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Simplified DES (S-DES) Software</h1>
+<p>
+  This tool implements the standard textbook Simplified DES: 
+  <strong>10-bit key</strong>, <strong>8-bit blocks</strong>, 2 subkeys (K1, K2).
+  Enter a 10-bit key below, then encrypt or decrypt.
+</p>
+
+<div class="section">
+  <label for="keyInput">10-bit key (e.g., 1010000010):</label>
+  <input id="keyInput" type="text" placeholder="1010000010" />
+
+  <button onclick="showSubkeys()">Generate Subkeys</button>
+  <div id="subkeysOutput" class="output"></div>
+</div>
+
+<div class="section">
+  <h2>Encrypt Text</h2>
+  <label for="plainText">Plaintext (normal text):</label>
+  <textarea id="plainText" rows="3" placeholder="HELLO"></textarea>
+
+  <button onclick="encryptTextUI()">Encrypt</button>
+
+  <p><strong>Ciphertext (as 8-bit blocks):</strong></p>
+  <div id="cipherBlocksOutput" class="output"></div>
+  <small>These are the encrypted bits for each character, separated by spaces.</small>
+</div>
+
+<div class="section">
+  <h2>Decrypt Text</h2>
+  <label for="cipherBlocksInput">Ciphertext blocks (8-bit, space-separated):</label>
+  <textarea id="cipherBlocksInput" rows="3"
+    placeholder="Enter blocks like: 10101010 01010101"></textarea>
+
+  <button onclick="decryptTextUI()">Decrypt</button>
+
+  <p><strong>Recovered plaintext:</strong></p>
+  <div id="plainRecoveredOutput" class="output"></div>
+</div>
+
+<div class="section">
+  <h2>Encrypt / Decrypt Single 8-bit Block</h2>
+
+  <label for="singleBlockInput">8-bit block:</label>
+  <input id="singleBlockInput" type="text" placeholder="11010111" />
+
+  <button onclick="encryptBlockUI()">Encrypt Block</button>
+  <button onclick="decryptBlockUI()">Decrypt Block</button>
+
+  <p><strong>Result:</strong></p>
+  <div id="singleBlockOutput" class="output"></div>
+</div>
+
+<script>
+  // ===================== S-DES TABLES =====================
+  const P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6];
+  const P8  = [6, 3, 7, 4, 8, 5, 10, 9];
+  const P4  = [2, 4, 3, 1];
+  const IP  = [2, 6, 3, 1, 4, 8, 5, 7];
+  const IP_INV = [4, 1, 3, 5, 7, 2, 8, 6];
+  const EP  = [4, 1, 2, 3, 2, 3, 4, 1];
+
+  const S0 = [
+    [1, 0, 3, 2],
+    [3, 2, 1, 0],
+    [0, 2, 1, 3],
+    [3, 1, 3, 2],
+  ];
+
+  const S1 = [
+    [0, 1, 2, 3],
+    [2, 0, 1, 3],
+    [3, 0, 1, 0],
+    [2, 1, 0, 3],
+  ];
+
+  // ===================== BIT HELPERS =====================
+  function permute(bits, table) {
+    return table.map(i => bits[i - 1]).join('');
+  }
+
+  function leftShift(bits, n) {
+    return bits.slice(n) + bits.slice(0, n);
+  }
+
+  function xorBits(a, b) {
+    return a.split('').map((ch, i) => (ch === b[i] ? '0' : '1')).join('');
+  }
+
+  function sboxLookup(bits4, sbox) {
+    const row = parseInt(bits4[0] + bits4[3], 2);
+    const col = parseInt(bits4.slice(1, 3), 2);
+    const val = sbox[row][col];
+    return val.toString(2).padStart(2, '0');
+  }
+
+  // ===================== KEY SCHEDULE =====================
+  function generateSubkeys(key10) {
+    if (key10.length !== 10 || /[^01]/.test(key10)) {
+      throw new Error("Key must be a 10-bit binary string.");
+    }
+
+    const p10 = permute(key10, P10);
+    let left = p10.slice(0, 5);
+    let right = p10.slice(5);
+
+    // LS-1
+    left = leftShift(left, 1);
+    right = leftShift(right, 1);
+    const k1 = permute(left + right, P8);
+
+    // LS-2 (on already once-shifted halves → total 3)
+    left = leftShift(left, 2);
+    right = leftShift(right, 2);
+    const k2 = permute(left + right, P8);
+
+    return { k1, k2 };
+  }
+
+  // ===================== f_k FUNCTION =====================
+  function fk(bits8, subkey) {
+    const left = bits8.slice(0, 4);
+    const right = bits8.slice(4);
+
+    const rightExpanded = permute(right, EP);
+    const xored = xorBits(rightExpanded, subkey);
+    const left4 = xored.slice(0, 4);
+    const right4 = xored.slice(4);
+
+    const s0Out = sboxLookup(left4, S0);
+    const s1Out = sboxLookup(right4, S1);
+    const sOutput = s0Out + s1Out;
+
+    const p4Out = permute(sOutput, P4);
+    const newLeft = xorBits(left, p4Out);
+
+    return newLeft + right;
+  }
+
+  // ===================== BLOCK ENCRYPT / DECRYPT =====================
+  function encryptBlock(plain8, key10) {
+    if (plain8.length !== 8 || /[^01]/.test(plain8)) {
+      throw new Error("Plaintext block must be an 8-bit binary string.");
+    }
+    const { k1, k2 } = generateSubkeys(key10);
+
+    let ip = permute(plain8, IP);
+    let t = fk(ip, k1);
+
+    // swap halves
+    t = t.slice(4) + t.slice(0, 4);
+
+    t = fk(t, k2);
+    const cipher = permute(t, IP_INV);
+    return cipher;
+  }
+
+  function decryptBlock(cipher8, key10) {
+    if (cipher8.length !== 8 || /[^01]/.test(cipher8)) {
+      throw new Error("Ciphertext block must be an 8-bit binary string.");
+    }
+    const { k1, k2 } = generateSubkeys(key10);
+
+    let ip = permute(cipher8, IP);
+    let t = fk(ip, k2); // reverse subkeys
+    t = t.slice(4) + t.slice(0, 4);
+    t = fk(t, k1);
+    const plain = permute(t, IP_INV);
+    return plain;
+  }
+
+  // ===================== TEXT HELPERS =====================
+  function charToBits(ch) {
+    return ch.charCodeAt(0).toString(2).padStart(8, '0');
+  }
+
+  function bitsToChar(bits8) {
+    return String.fromCharCode(parseInt(bits8, 2));
+  }
+
+  function encryptText(message, key10) {
+    const blocks = [];
+    for (let i = 0; i < message.length; i++) {
+      const b = charToBits(message[i]);
+      const c = encryptBlock(b, key10);
+      blocks.push(c);
+    }
+    return blocks.join(' ');
+  }
+
+  function decryptText(cipherBlocksStr, key10) {
+    const blocks = cipherBlocksStr.trim().split(/\s+/);
+    const chars = blocks.map(b => bitsToChar(decryptBlock(b, key10)));
+    return chars.join('');
+  }
+
+  // ===================== UI FUNCTIONS =====================
+  function showSubkeys() {
+    const key = document.getElementById('keyInput').value.trim();
+    const out = document.getElementById('subkeysOutput');
+    try {
+      const { k1, k2 } = generateSubkeys(key);
+      out.textContent = `K1 = ${k1}\nK2 = ${k2}`;
+    } catch (e) {
+      out.textContent = "Error: " + e.message;
+    }
+  }
+
+  function encryptTextUI() {
+    const key = document.getElementById('keyInput').value.trim();
+    const text = document.getElementById('plainText').value;
+    const out = document.getElementById('cipherBlocksOutput');
+    try {
+      const cipherBlocks = encryptText(text, key);
+      out.textContent = cipherBlocks;
+      // also pre-fill decrypt box for convenience
+      document.getElementById('cipherBlocksInput').value = cipherBlocks;
+    } catch (e) {
+      out.textContent = "Error: " + e.message;
+    }
+  }
+
+  function decryptTextUI() {
+    const key = document.getElementById('keyInput').value.trim();
+    const cipherBlocks = document.getElementById('cipherBlocksInput').value;
+    const out = document.getElementById('plainRecoveredOutput');
+    try {
+      const plain = decryptText(cipherBlocks, key);
+      out.textContent = plain;
+    } catch (e) {
+      out.textContent = "Error: " + e.message;
+    }
+  }
+
+  function encryptBlockUI() {
+    const key = document.getElementById('keyInput').value.trim();
+    const block = document.getElementById('singleBlockInput').value.trim();
+    const out = document.getElementById('singleBlockOutput');
+    try {
+      const c = encryptBlock(block, key);
+      out.textContent = "Cipher block: " + c;
+    } catch (e) {
+      out.textContent = "Error: " + e.message;
+    }
+  }
+
+  function decryptBlockUI() {
+    const key = document.getElementById('keyInput').value.trim();
+    const block = document.getElementById('singleBlockInput').value.trim();
+    const out = document.getElementById('singleBlockOutput');
+    try {
+      const p = decryptBlock(block, key);
+      out.textContent = "Plain block: " + p;
+    } catch (e) {
+      out.textContent = "Error: " + e.message;
+    }
+  }
+</script>
+
+</body>
+</html>
