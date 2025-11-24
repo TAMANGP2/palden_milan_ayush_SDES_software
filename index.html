@@ -3,308 +3,804 @@
 <head>
   <meta charset="UTF-8" />
   <title>Simplified DES Tool (S-DES)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 40px auto;
-      line-height: 1.5;
+    :root {
+      --bg: #050816;
+      --card: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56, 189, 248, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --error: #f97373;
+      --border: #1f2937;
+      --radius-lg: 14px;
+      --radius-sm: 8px;
     }
-    h1 {
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: radial-gradient(circle at top, #172554 0, #020617 50%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 12px 40px;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 980px;
+    }
+
+    header {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.9rem;
+      letter-spacing: 0.03em;
       text-align: center;
     }
-    label {
-      font-weight: bold;
+
+    header p {
+      margin: 0;
+      text-align: center;
+      font-size: 0.92rem;
+      color: var(--muted);
     }
-    input[type="text"], textarea {
-      width: 100%;
-      padding: 6px;
-      margin: 4px 0 12px 0;
-      box-sizing: border-box;
-      font-family: monospace;
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      margin: 0 auto 10px;
+      font-size: 0.75rem;
+      color: var(--muted);
     }
-    button {
-      padding: 8px 16px;
-      margin-right: 8px;
+
+    .badge span {
+      width: 7px;
+      height: 7px;
+      border-radius: 999px;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.2fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    .card {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.8);
+      padding: 14px 16px 16px;
+    }
+
+    .card h2 {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+    }
+
+    .card p {
+      margin: 0 0 6px;
+      font-size: 0.86rem;
+      color: var(--muted);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 4px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
       cursor: pointer;
+      transition: all 0.15s ease;
     }
-    .section {
-      border: 1px solid #ccc;
-      padding: 16px;
-      margin-bottom: 20px;
-      border-radius: 6px;
+
+    .tab-btn.active {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
+
+    .tab-btn:hover {
+      background: rgba(148, 163, 184, 0.12);
+    }
+
+    .tab-panel {
+      display: none;
+      margin-top: 6px;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    label {
+      font-size: 0.84rem;
+      font-weight: 500;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: var(--radius-sm);
+      border: 1px solid #273549;
+      background: #020617;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      font-size: 0.85rem;
+      outline: none;
+      resize: vertical;
+      min-height: 34px;
+    }
+
+    input[type="text"]:focus,
+    textarea:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45);
+    }
+
+    .field-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 10px 0 8px;
+    }
+
+    button {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 0.84rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #0ea5e9, #22c55e);
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 10px 20px rgba(8, 47, 73, 0.6);
+      transition: transform 0.15s ease, box-shadow 0.15s ease,
+        filter 0.15s ease;
+    }
+
+    button.secondary {
+      background: rgba(15, 23, 42, 1);
+      color: var(--muted);
+      border: 1px solid #1f2937;
+      box-shadow: none;
+    }
+
+    button.small {
+      padding: 4px 10px;
+      font-size: 0.78rem;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+      box-shadow: 0 18px 35px rgba(8, 47, 73, 0.9);
+    }
+
+    button.secondary:hover {
+      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.8);
+      filter: none;
+    }
+
     .output {
-      background: #f5f5f5;
-      padding: 8px;
-      min-height: 40px;
+      background: #020617;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      min-height: 34px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+        "Liberation Mono", "Courier New", monospace;
+      font-size: 0.83rem;
+      border: 1px solid #1e293b;
       white-space: pre-wrap;
-      font-family: monospace;
+      word-break: break-word;
     }
-    small {
-      color: #555;
+
+    .output.empty {
+      color: var(--muted);
+    }
+
+    .tagline {
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .tag {
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      background: rgba(15, 23, 42, 0.9);
+    }
+
+    .error-msg {
+      color: var(--error);
+      font-size: 0.78rem;
+      margin-top: 3px;
+    }
+
+    footer {
+      margin-top: 16px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    footer strong {
+      color: var(--accent);
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
+  <div class="app-shell">
+    <header>
+      <div class="badge">
+        <span></span> S-DES Project • Cryptology
+      </div>
+      <h1>Simplified DES Encryption Lab</h1>
+      <p>
+        Interactive tool implementing the standard textbook S-DES
+        (10-bit key, 8-bit blocks). Designed for experimenting with key
+        schedule, block encryption, and text encryption.
+      </p>
+    </header>
 
-<h1>Simplified DES (S-DES) Software</h1>
-<p>
-  This tool implements the standard textbook Simplified DES: 
-  <strong>10-bit key</strong>, <strong>8-bit blocks</strong>, 2 subkeys (K1, K2).
-  Enter a 10-bit key below, then encrypt or decrypt.
-</p>
+    <div class="grid">
+      <!-- LEFT: main interactive area -->
+      <section class="card">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="key-tab">Key &amp; Subkeys</button>
+          <button class="tab-btn" data-tab="text-tab">Text Mode</button>
+          <button class="tab-btn" data-tab="block-tab">Single Block Mode</button>
+        </div>
 
-<div class="section">
-  <label for="keyInput">10-bit key (e.g., 1010000010):</label>
-  <input id="keyInput" type="text" placeholder="1010000010" />
+        <!-- KEY TAB -->
+        <div id="key-tab" class="tab-panel active">
+          <label for="keyInput">10-bit key</label>
+          <div class="field-row">
+            <input
+              id="keyInput"
+              type="text"
+              maxlength="10"
+              placeholder="Example: 1010000010"
+            />
+            <button class="small secondary" type="button" onclick="setExampleKey()">
+              Use example
+            </button>
+          </div>
+          <div class="hint">
+            Key must be exactly 10 bits (only 0 and 1). The key schedule
+            generates two 8-bit subkeys K1 and K2.
+          </div>
+          <div id="keyError" class="error-msg"></div>
 
-  <button onclick="showSubkeys()">Generate Subkeys</button>
-  <div id="subkeysOutput" class="output"></div>
-</div>
+          <div class="btn-row">
+            <button type="button" onclick="showSubkeys()">
+              <span>Generate subkeys</span>
+            </button>
+            <button
+              type="button"
+              class="secondary small"
+              onclick="clearAll()"
+            >
+              Reset all
+            </button>
+          </div>
 
-<div class="section">
-  <h2>Encrypt Text</h2>
-  <label for="plainText">Plaintext (normal text):</label>
-  <textarea id="plainText" rows="3" placeholder="HELLO"></textarea>
+          <p style="margin-top: 4px; margin-bottom: 4px; font-size: 0.82rem;">
+            Subkeys:
+          </p>
+          <div id="subkeysOutput" class="output empty">
+            K1 and K2 will appear here after you enter a valid key.
+          </div>
+        </div>
 
-  <button onclick="encryptTextUI()">Encrypt</button>
+        <!-- TEXT TAB -->
+        <div id="text-tab" class="tab-panel">
+          <label for="plainText">Plaintext (ASCII text)</label>
+          <textarea
+            id="plainText"
+            rows="3"
+            placeholder="Type a message like HELLO or TEST123"
+          ></textarea>
+          <div class="hint">
+            Each character is encrypted as a separate 8-bit block.
+          </div>
 
-  <p><strong>Ciphertext (as 8-bit blocks):</strong></p>
-  <div id="cipherBlocksOutput" class="output"></div>
-  <small>These are the encrypted bits for each character, separated by spaces.</small>
-</div>
+          <div class="btn-row">
+            <button type="button" onclick="encryptTextUI()">
+              Encrypt text
+            </button>
+            <button type="button" class="secondary" onclick="decryptTextUI()">
+              Decrypt blocks
+            </button>
+            <button
+              type="button"
+              class="small secondary"
+              onclick="setExampleText()"
+            >
+              Fill with example
+            </button>
+          </div>
 
-<div class="section">
-  <h2>Decrypt Text</h2>
-  <label for="cipherBlocksInput">Ciphertext blocks (8-bit, space-separated):</label>
-  <textarea id="cipherBlocksInput" rows="3"
-    placeholder="Enter blocks like: 10101010 01010101"></textarea>
+          <label for="cipherBlocksOutput">Ciphertext (8-bit blocks)</label>
+          <div
+            id="cipherBlocksOutput"
+            class="output empty"
+          >
+            Encrypted 8-bit blocks will appear here.
+          </div>
 
-  <button onclick="decryptTextUI()">Decrypt</button>
+          <label
+            for="cipherBlocksInput"
+            style="margin-top: 10px;"
+            >Ciphertext blocks to decrypt</label
+          >
+          <textarea
+            id="cipherBlocksInput"
+            rows="3"
+            placeholder="Paste blocks here to decrypt: 10101010 01010101 ..."
+          ></textarea>
 
-  <p><strong>Recovered plaintext:</strong></p>
-  <div id="plainRecoveredOutput" class="output"></div>
-</div>
+          <div id="textError" class="error-msg"></div>
+        </div>
 
-<div class="section">
-  <h2>Encrypt / Decrypt Single 8-bit Block</h2>
+        <!-- BLOCK TAB -->
+        <div id="block-tab" class="tab-panel">
+          <label for="singleBlockInput">Single 8-bit block</label>
+          <div class="field-row">
+            <input
+              id="singleBlockInput"
+              type="text"
+              maxlength="8"
+              placeholder="Example: 11010111"
+            />
+            <button class="small secondary" type="button" onclick="setExampleBlock()">
+              Example block
+            </button>
+          </div>
+          <div class="hint">
+            Work directly with one 8-bit block to match homework or textbook
+            examples.
+          </div>
 
-  <label for="singleBlockInput">8-bit block:</label>
-  <input id="singleBlockInput" type="text" placeholder="11010111" />
+          <div class="btn-row">
+            <button type="button" onclick="encryptBlockUI()">
+              Encrypt block
+            </button>
+            <button type="button" class="secondary" onclick="decryptBlockUI()">
+              Decrypt block
+            </button>
+          </div>
 
-  <button onclick="encryptBlockUI()">Encrypt Block</button>
-  <button onclick="decryptBlockUI()">Decrypt Block</button>
+          <label style="margin-top: 4px;">Result</label>
+          <div id="singleBlockOutput" class="output empty">
+            Resulting block will appear here.
+          </div>
 
-  <p><strong>Result:</strong></p>
-  <div id="singleBlockOutput" class="output"></div>
-</div>
+          <div id="blockError" class="error-msg"></div>
+        </div>
+      </section>
 
-<script>
-  // ===================== S-DES TABLES =====================
-  const P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6];
-  const P8  = [6, 3, 7, 4, 8, 5, 10, 9];
-  const P4  = [2, 4, 3, 1];
-  const IP  = [2, 6, 3, 1, 4, 8, 5, 7];
-  const IP_INV = [4, 1, 3, 5, 7, 2, 8, 6];
-  const EP  = [4, 1, 2, 3, 2, 3, 4, 1];
+      <!-- RIGHT: explanation / summary -->
+      <aside class="card">
+        <h2>How this S-DES tool works</h2>
+        <p>
+          This implementation follows the classic textbook version of
+          Simplified DES:
+        </p>
+        <ul style="padding-left: 18px; margin-top: 4px; margin-bottom: 6px; font-size: 0.84rem;">
+          <li>10-bit master key → key schedule → subkeys K1 and K2</li>
+          <li>8-bit data blocks with initial and inverse permutations</li>
+          <li>Two Feistel rounds using S-boxes S0 and S1</li>
+          <li>Supports block-level and text-level encryption</li>
+        </ul>
 
-  const S0 = [
-    [1, 0, 3, 2],
-    [3, 2, 1, 0],
-    [0, 2, 1, 3],
-    [3, 1, 3, 2],
-  ];
+        <p style="margin-top: 8px; margin-bottom: 4px; font-size: 0.84rem;">
+          Recommended workflow:
+        </p>
+        <ol style="padding-left: 18px; font-size: 0.82rem; color: var(--muted); margin-top: 0;">
+          <li>Choose a 10-bit key in <strong>Key &amp; Subkeys</strong>.</li>
+          <li>Verify K1 and K2 against manual calculations.</li>
+          <li>Use <strong>Text Mode</strong> to see how characters map to blocks.</li>
+          <li>Use <strong>Single Block Mode</strong> to match step-by-step
+            homework problems.</li>
+        </ol>
 
-  const S1 = [
-    [0, 1, 2, 3],
-    [2, 0, 1, 3],
-    [3, 0, 1, 0],
-    [2, 1, 0, 3],
-  ];
+        <div class="tagline">
+          <span class="tag">10-bit key</span>
+          <span class="tag">8-bit blocks</span>
+          <span class="tag">Feistel structure</span>
+          <span class="tag">Student project</span>
+        </div>
+      </aside>
+    </div>
 
-  // ===================== BIT HELPERS =====================
-  function permute(bits, table) {
-    return table.map(i => bits[i - 1]).join('');
-  }
+    <footer>
+      Built for cryptology coursework by
+      <strong>Palden Tamang</strong>,
+      <strong>Milan</strong>, and
+      <strong>Ayush Kafley</strong>.
+    </footer>
+  </div>
 
-  function leftShift(bits, n) {
-    return bits.slice(n) + bits.slice(0, n);
-  }
+  <script>
+    // ---------- TAB HANDLING ----------
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    const tabPanels = document.querySelectorAll(".tab-panel");
 
-  function xorBits(a, b) {
-    return a.split('').map((ch, i) => (ch === b[i] ? '0' : '1')).join('');
-  }
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const target = btn.getAttribute("data-tab");
+        tabButtons.forEach((b) => b.classList.remove("active"));
+        tabPanels.forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById(target).classList.add("active");
+      });
+    });
 
-  function sboxLookup(bits4, sbox) {
-    const row = parseInt(bits4[0] + bits4[3], 2);
-    const col = parseInt(bits4.slice(1, 3), 2);
-    const val = sbox[row][col];
-    return val.toString(2).padStart(2, '0');
-  }
+    // ---------- S-DES TABLES ----------
+    const P10 = [3, 5, 2, 7, 4, 10, 1, 9, 8, 6];
+    const P8 = [6, 3, 7, 4, 8, 5, 10, 9];
+    const P4 = [2, 4, 3, 1];
+    const IP = [2, 6, 3, 1, 4, 8, 5, 7];
+    const IP_INV = [4, 1, 3, 5, 7, 2, 8, 6];
+    const EP = [4, 1, 2, 3, 2, 3, 4, 1];
 
-  // ===================== KEY SCHEDULE =====================
-  function generateSubkeys(key10) {
-    if (key10.length !== 10 || /[^01]/.test(key10)) {
-      throw new Error("Key must be a 10-bit binary string.");
+    const S0 = [
+      [1, 0, 3, 2],
+      [3, 2, 1, 0],
+      [0, 2, 1, 3],
+      [3, 1, 3, 2],
+    ];
+
+    const S1 = [
+      [0, 1, 2, 3],
+      [2, 0, 1, 3],
+      [3, 0, 1, 0],
+      [2, 1, 0, 3],
+    ];
+
+    // ---------- BIT HELPERS ----------
+    function permute(bits, table) {
+      return table.map((i) => bits[i - 1]).join("");
     }
 
-    const p10 = permute(key10, P10);
-    let left = p10.slice(0, 5);
-    let right = p10.slice(5);
-
-    // LS-1
-    left = leftShift(left, 1);
-    right = leftShift(right, 1);
-    const k1 = permute(left + right, P8);
-
-    // LS-2 (on already once-shifted halves → total 3)
-    left = leftShift(left, 2);
-    right = leftShift(right, 2);
-    const k2 = permute(left + right, P8);
-
-    return { k1, k2 };
-  }
-
-  // ===================== f_k FUNCTION =====================
-  function fk(bits8, subkey) {
-    const left = bits8.slice(0, 4);
-    const right = bits8.slice(4);
-
-    const rightExpanded = permute(right, EP);
-    const xored = xorBits(rightExpanded, subkey);
-    const left4 = xored.slice(0, 4);
-    const right4 = xored.slice(4);
-
-    const s0Out = sboxLookup(left4, S0);
-    const s1Out = sboxLookup(right4, S1);
-    const sOutput = s0Out + s1Out;
-
-    const p4Out = permute(sOutput, P4);
-    const newLeft = xorBits(left, p4Out);
-
-    return newLeft + right;
-  }
-
-  // ===================== BLOCK ENCRYPT / DECRYPT =====================
-  function encryptBlock(plain8, key10) {
-    if (plain8.length !== 8 || /[^01]/.test(plain8)) {
-      throw new Error("Plaintext block must be an 8-bit binary string.");
+    function leftShift(bits, n) {
+      return bits.slice(n) + bits.slice(0, n);
     }
-    const { k1, k2 } = generateSubkeys(key10);
 
-    let ip = permute(plain8, IP);
-    let t = fk(ip, k1);
-
-    // swap halves
-    t = t.slice(4) + t.slice(0, 4);
-
-    t = fk(t, k2);
-    const cipher = permute(t, IP_INV);
-    return cipher;
-  }
-
-  function decryptBlock(cipher8, key10) {
-    if (cipher8.length !== 8 || /[^01]/.test(cipher8)) {
-      throw new Error("Ciphertext block must be an 8-bit binary string.");
+    function xorBits(a, b) {
+      return a
+        .split("")
+        .map((ch, i) => (ch === b[i] ? "0" : "1"))
+        .join("");
     }
-    const { k1, k2 } = generateSubkeys(key10);
 
-    let ip = permute(cipher8, IP);
-    let t = fk(ip, k2); // reverse subkeys
-    t = t.slice(4) + t.slice(0, 4);
-    t = fk(t, k1);
-    const plain = permute(t, IP_INV);
-    return plain;
-  }
-
-  // ===================== TEXT HELPERS =====================
-  function charToBits(ch) {
-    return ch.charCodeAt(0).toString(2).padStart(8, '0');
-  }
-
-  function bitsToChar(bits8) {
-    return String.fromCharCode(parseInt(bits8, 2));
-  }
-
-  function encryptText(message, key10) {
-    const blocks = [];
-    for (let i = 0; i < message.length; i++) {
-      const b = charToBits(message[i]);
-      const c = encryptBlock(b, key10);
-      blocks.push(c);
+    function sboxLookup(bits4, sbox) {
+      const row = parseInt(bits4[0] + bits4[3], 2);
+      const col = parseInt(bits4.slice(1, 3), 2);
+      const val = sbox[row][col];
+      return val.toString(2).padStart(2, "0");
     }
-    return blocks.join(' ');
-  }
 
-  function decryptText(cipherBlocksStr, key10) {
-    const blocks = cipherBlocksStr.trim().split(/\s+/);
-    const chars = blocks.map(b => bitsToChar(decryptBlock(b, key10)));
-    return chars.join('');
-  }
+    // ---------- KEY SCHEDULE ----------
+    function generateSubkeys(key10) {
+      if (key10.length !== 10 || /[^01]/.test(key10)) {
+        throw new Error("Key must be a 10-bit binary string (only 0 and 1).");
+      }
 
-  // ===================== UI FUNCTIONS =====================
-  function showSubkeys() {
-    const key = document.getElementById('keyInput').value.trim();
-    const out = document.getElementById('subkeysOutput');
-    try {
-      const { k1, k2 } = generateSubkeys(key);
-      out.textContent = `K1 = ${k1}\nK2 = ${k2}`;
-    } catch (e) {
-      out.textContent = "Error: " + e.message;
+      const p10 = permute(key10, P10);
+      let left = p10.slice(0, 5);
+      let right = p10.slice(5);
+
+      // LS-1
+      left = leftShift(left, 1);
+      right = leftShift(right, 1);
+      const k1 = permute(left + right, P8);
+
+      // LS-2 (on already once-shifted halves → total 3)
+      left = leftShift(left, 2);
+      right = leftShift(right, 2);
+      const k2 = permute(left + right, P8);
+
+      return { k1, k2 };
     }
-  }
 
-  function encryptTextUI() {
-    const key = document.getElementById('keyInput').value.trim();
-    const text = document.getElementById('plainText').value;
-    const out = document.getElementById('cipherBlocksOutput');
-    try {
-      const cipherBlocks = encryptText(text, key);
-      out.textContent = cipherBlocks;
-      // also pre-fill decrypt box for convenience
-      document.getElementById('cipherBlocksInput').value = cipherBlocks;
-    } catch (e) {
-      out.textContent = "Error: " + e.message;
+    // ---------- f_k FUNCTION ----------
+    function fk(bits8, subkey) {
+      const left = bits8.slice(0, 4);
+      const right = bits8.slice(4);
+
+      const rightExpanded = permute(right, EP);
+      const xored = xorBits(rightExpanded, subkey);
+      const left4 = xored.slice(0, 4);
+      const right4 = xored.slice(4);
+
+      const s0Out = sboxLookup(left4, S0);
+      const s1Out = sboxLookup(right4, S1);
+      const sOutput = s0Out + s1Out;
+
+      const p4Out = permute(sOutput, P4);
+      const newLeft = xorBits(left, p4Out);
+
+      return newLeft + right;
     }
-  }
 
-  function decryptTextUI() {
-    const key = document.getElementById('keyInput').value.trim();
-    const cipherBlocks = document.getElementById('cipherBlocksInput').value;
-    const out = document.getElementById('plainRecoveredOutput');
-    try {
-      const plain = decryptText(cipherBlocks, key);
-      out.textContent = plain;
-    } catch (e) {
-      out.textContent = "Error: " + e.message;
+    // ---------- BLOCK ENCRYPT/DECRYPT ----------
+    function encryptBlock(plain8, key10) {
+      if (plain8.length !== 8 || /[^01]/.test(plain8)) {
+        throw new Error("Plaintext block must be an 8-bit binary string.");
+      }
+      const { k1, k2 } = generateSubkeys(key10);
+
+      let ip = permute(plain8, IP);
+      let t = fk(ip, k1);
+
+      // swap halves
+      t = t.slice(4) + t.slice(0, 4);
+
+      t = fk(t, k2);
+      const cipher = permute(t, IP_INV);
+      return cipher;
     }
-  }
 
-  function encryptBlockUI() {
-    const key = document.getElementById('keyInput').value.trim();
-    const block = document.getElementById('singleBlockInput').value.trim();
-    const out = document.getElementById('singleBlockOutput');
-    try {
-      const c = encryptBlock(block, key);
-      out.textContent = "Cipher block: " + c;
-    } catch (e) {
-      out.textContent = "Error: " + e.message;
+    function decryptBlock(cipher8, key10) {
+      if (cipher8.length !== 8 || /[^01]/.test(cipher8)) {
+        throw new Error("Ciphertext block must be an 8-bit binary string.");
+      }
+      const { k1, k2 } = generateSubkeys(key10);
+
+      let ip = permute(cipher8, IP);
+      let t = fk(ip, k2); // reverse subkey order
+      t = t.slice(4) + t.slice(0, 4);
+      t = fk(t, k1);
+      const plain = permute(t, IP_INV);
+      return plain;
     }
-  }
 
-  function decryptBlockUI() {
-    const key = document.getElementById('keyInput').value.trim();
-    const block = document.getElementById('singleBlockInput').value.trim();
-    const out = document.getElementById('singleBlockOutput');
-    try {
-      const p = decryptBlock(block, key);
-      out.textContent = "Plain block: " + p;
-    } catch (e) {
-      out.textContent = "Error: " + e.message;
+    // ---------- TEXT HELPERS ----------
+    function charToBits(ch) {
+      return ch.charCodeAt(0).toString(2).padStart(8, "0");
     }
-  }
-</script>
 
+    function bitsToChar(bits8) {
+      return String.fromCharCode(parseInt(bits8, 2));
+    }
+
+    function encryptText(message, key10) {
+      const blocks = [];
+      for (let i = 0; i < message.length; i++) {
+        const b = charToBits(message[i]);
+        const c = encryptBlock(b, key10);
+        blocks.push(c);
+      }
+      return blocks.join(" ");
+    }
+
+    function decryptText(cipherBlocksStr, key10) {
+      const blocks = cipherBlocksStr.trim().split(/\s+/);
+      const chars = blocks.map((b) => bitsToChar(decryptBlock(b, key10)));
+      return chars.join("");
+    }
+
+    // ---------- UI HELPERS ----------
+    const keyErrorEl = document.getElementById("keyError");
+    const textErrorEl = document.getElementById("textError");
+    const blockErrorEl = document.getElementById("blockError");
+
+    function clearErrors() {
+      keyErrorEl.textContent = "";
+      textErrorEl.textContent = "";
+      blockErrorEl.textContent = "";
+    }
+
+    function setOutput(id, text) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.classList.toggle("empty", !text);
+    }
+
+    function setExampleKey() {
+      document.getElementById("keyInput").value = "1010000010";
+      clearErrors();
+      setOutput("subkeysOutput", "K1 and K2 will appear here after you click “Generate subkeys”.");
+      document.getElementById("subkeysOutput").classList.add("empty");
+    }
+
+    function setExampleText() {
+      document.getElementById("plainText").value = "HELLO";
+      setExampleKey();
+    }
+
+    function setExampleBlock() {
+      document.getElementById("singleBlockInput").value = "11010111";
+      setExampleKey();
+    }
+
+    function clearAll() {
+      document.getElementById("keyInput").value = "";
+      document.getElementById("plainText").value = "";
+      document.getElementById("cipherBlocksInput").value = "";
+      document.getElementById("singleBlockInput").value = "";
+      setOutput("subkeysOutput", "K1 and K2 will appear here after you enter a valid key.");
+      document.getElementById("subkeysOutput").classList.add("empty");
+      setOutput("cipherBlocksOutput", "Encrypted 8-bit blocks will appear here.");
+      document.getElementById("cipherBlocksOutput").classList.add("empty");
+      setOutput("plainRecoveredOutput", "");
+      document.getElementById("plainRecoveredOutput")?.classList.add("empty");
+      setOutput("singleBlockOutput", "Resulting block will appear here.");
+      document.getElementById("singleBlockOutput").classList.add("empty");
+      clearErrors();
+    }
+
+    // ---------- UI ACTIONS ----------
+    function showSubkeys() {
+      clearErrors();
+      const key = document.getElementById("keyInput").value.trim();
+      try {
+        const { k1, k2 } = generateSubkeys(key);
+        setOutput("subkeysOutput", `K1 = ${k1}\nK2 = ${k2}`);
+      } catch (e) {
+        keyErrorEl.textContent = e.message;
+        setOutput(
+          "subkeysOutput",
+          "Unable to generate subkeys. Please fix the key above."
+        );
+      }
+    }
+
+    function encryptTextUI() {
+      clearErrors();
+      const key = document.getElementById("keyInput").value.trim();
+      const text = document.getElementById("plainText").value;
+      if (text.length === 0) {
+        textErrorEl.textContent = "Plaintext cannot be empty.";
+        return;
+      }
+      try {
+        const cipherBlocks = encryptText(text, key);
+        setOutput("cipherBlocksOutput", cipherBlocks);
+        document.getElementById("cipherBlocksInput").value = cipherBlocks;
+      } catch (e) {
+        if (e.message.includes("Key")) {
+          keyErrorEl.textContent = e.message;
+        } else {
+          textErrorEl.textContent = e.message;
+        }
+      }
+    }
+
+    function decryptTextUI() {
+      clearErrors();
+      const key = document.getElementById("keyInput").value.trim();
+      const cipherBlocks = document
+        .getElementById("cipherBlocksInput")
+        .value.trim();
+      if (!cipherBlocks) {
+        textErrorEl.textContent = "Please enter ciphertext blocks to decrypt.";
+        return;
+      }
+      try {
+        const plain = decryptText(cipherBlocks, key);
+        setOutput("plainRecoveredOutput", plain);
+      } catch (e) {
+        if (e.message.includes("Key")) {
+          keyErrorEl.textContent = e.message;
+        } else {
+          textErrorEl.textContent =
+            "Error decrypting. Check blocks are 8-bit binary values.";
+        }
+      }
+    }
+
+    function encryptBlockUI() {
+      clearErrors();
+      const key = document.getElementById("keyInput").value.trim();
+      const block = document
+        .getElementById("singleBlockInput")
+        .value.trim();
+      if (block.length === 0) {
+        blockErrorEl.textContent = "Please enter an 8-bit block.";
+        return;
+      }
+      try {
+        const c = encryptBlock(block, key);
+        setOutput("singleBlockOutput", "Cipher block: " + c);
+      } catch (e) {
+        if (e.message.includes("Key")) {
+          keyErrorEl.textContent = e.message;
+        } else {
+          blockErrorEl.textContent = e.message;
+        }
+      }
+    }
+
+    function decryptBlockUI() {
+      clearErrors();
+      const key = document.getElementById("keyInput").value.trim();
+      const block = document
+        .getElementById("singleBlockInput")
+        .value.trim();
+      if (block.length === 0) {
+        blockErrorEl.textContent = "Please enter an 8-bit block.";
+        return;
+      }
+      try {
+        const p = decryptBlock(block, key);
+        setOutput("singleBlockOutput", "Plain block: " + p);
+      } catch (e) {
+        if (e.message.includes("Key")) {
+          keyErrorEl.textContent = e.message;
+        } else {
+          blockErrorEl.textContent = e.message;
+        }
+      }
+    }
+
+    // set initial placeholder states
+    clearAll();
+  </script>
 </body>
 </html>
